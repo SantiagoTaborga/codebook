@@ -286,6 +286,9 @@ summary_stats <- function(var_name, ...) {
     ) %>%
     kable(digits = 2, caption = "")
 }
+
+# exporting the table
+write.csv(merged_df, "codebook.csv")
 ```
 
 # Overview of Data
@@ -306,48 +309,57 @@ By merging these diverse datasets, this project aims to provide a comprehensive 
 # Sources and Methodology
 
 The data for this project was collected from a variety of reputable sources, including the International Telecommunication Union, the GSMA, the World Bank, and the International Energy Agency. Each dataset was merged into a unified panel with consistent identifiers (`country`, `year`) and cleaned for uniformity.
+\pagebreak
+```{r}
+# Table for vars
+df_sources <- data.frame(
+  Source = c(
+    "International Telecommunication Union",
+    "GSMA Mobile Connectivity Index",
+    "World Bank (Trade)",
+    "World Bank (Governance)",
+    "World Bank LPI",
+    "International Energy Agency",
+    "Kaggle"
+  ),
+  Variables = c(
+    "Individuals using the Internet (% of population)",
+    "mci_index, mci_infrastructure, mci_affordability, mci_cons_readiness, mci_content_services",
+    "Trade as % of GDP (trad_GDP)",
+    "Political stability indicators (psi_*)",
+    "lpi_score",
+    "ren_energy",
+    "region, area, coastline"
+  ),
+  Notes = c(
+    "Reshaped to long format, retaining only country-level annual estimates.",
+    "Numeric indicators of mobile readiness across infrastructure, affordability, and content access.",
+    "Long format reshaping applied; harmonized country names.",
+    "Wide-format reshaped and renamed with psi_ prefix for clarity.",
+    "Combined sheets into a single panel; harmonized names and numeric years.",
+    "Cleaned and converted non-numeric entries ('..') to NA.",
+    "Region harmonization and gap-filling completed with a custom mapping."
+  )
+)
 
-### International Telecommunication Union
-- **Source**: International Telecommunication Union. (2025). *ITU DataHub*. https://datahub.itu.int/indicators/
-- **Variable**: *Individuals using the Internet (% of population)*
-- **Notes**: Data was reshaped to long format, retaining only country-level annual estimates.
-
-### GSMA Mobile Connectivity Index
-- **Source**: GSMA. (2023). *Mobile Connectivity Index*. https://www.mobileconnectivityindex.com/assets/excelData/MCI_Data_2024.xlsx
-- **Variables**: *mci_index*, *mci_infrastructure*, *mci_affordability*, *mci_cons_readiness*, *mci_content_services*
-- **Notes**: Numeric indicators of mobile readiness across infrastructure, affordability, and content access.
-
-### World Bank
-- **Source**: World Bank. (2024). *World Development Indicators – Trade*. https://api.worldbank.org/
-- **Variable**: *Trade as % of GDP (trad_GDP)*
-- **Notes**: Long format reshaping applied; harmonized country names.
-\linebreak
-- **Source**: World Bank. (2023). *Worldwide Governance Indicators*. https://www.worldbank.org/en/publication/worldwide-governance-indicators
-- **Variables**: *Political stability indicators (prefixed with `psi_`)*
-- **Notes**: Wide-format reshaped and renamed with `psi_` prefix for clarity.
-
-### World Bank LPI
-- **Source**: World Bank. (2023). *Logistics Performance Index (2007–2023)*. https://lpi.worldbank.org/
-- **Variable**: *lpi_score*
-- **Notes**: Combined sheets into a single panel; harmonized names and numeric years.
-
-### International Energy Agency
-- **Source**: International Energy Agency. (2024). *Share of Modern Renewables in Final Energy Consumption*. https://www.iea.org/data-and-statistics
-- **Variable**: *ren_energy* (Share of modern renewables)
-- **Notes**: Cleaned and converted non-numeric entries ("..") to NA.
-
-### Kaggle
-- **Source**: Lasso, F. (2018). *Countries of the World*. Kaggle. https://www.kaggle.com/datasets/fernandol/countries-of-the-world
-- **Variables**: *region*, *area*, *coastline*
-- **Notes**: Region harmonization and gap-filling were completed with a custom mapping.
+df_sources %>%
+  kable(escape = FALSE, booktabs = TRUE) %>%
+  kable_styling(
+    full_width = FALSE,
+    latex_options = c("scale_down")
+  ) %>%
+  row_spec(0, bold = TRUE) %>%
+  row_spec(1:nrow(df_sources), hline_after = TRUE) %>%
+  column_spec(1, width = "4cm") %>%
+  column_spec(2, width = "4cm") %>%
+  column_spec(3, width = "7cm")
+```
 
 All country names were harmonized using a custom recoding function to ensure uniform joins across sources. NA values were explicitly handled and coded using `NA` throughout.
 
 # Itemized Variable Descriptions
 
 This section provides a reference guide to each variable in the dataset.
-
----
 
 ## `country` *(character)*  
 Name of the country or territory. Harmonized to standardized names.
@@ -486,3 +498,19 @@ Coastline-to-area ratio, calculated as coastline length divided by total land ar
 ```{r}
 summary_stats("coastline")
 ```
+
+\pagebreak
+# Data Sources
+- GSMA. (2023). Mobile Connectivity Index. https://www.mobileconnectivityindex.com/assets/excelData/MCI_Data_2024.xlsx
+
+- International Energy Agency. (2024). Share of Modern Renewables in Final Energy Consumption. https://www.iea.org/data-and-statistics
+
+- International Telecommunication Union. (2025). ITU DataHub. https://datahub.itu.int/indicators/
+
+- Lasso, F. (2018). Countries of the World [Dataset]. Kaggle. https://www.kaggle.com/datasets/fernandol/countries-of-the-world
+
+- World Bank. (2023). Logistics Performance Index (2007–2023). https://lpi.worldbank.org/
+
+- World Bank. (2023). Worldwide Governance Indicators. https://www.worldbank.org/en/publication/worldwide-governance-indicators
+
+- World Bank. (2024). World Development Indicators – Trade. https://api.worldbank.org/
