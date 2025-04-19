@@ -1,0 +1,488 @@
+---
+title: "Codebook"
+author: "Santiago Taborga"
+date: '2025-04-18'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# Setup -----
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  eval = TRUE,
+  fig.align = 'center', 
+  message = FALSE,
+  warning = FALSE
+)
+
+library(tidyverse)
+library(readxl)
+library(haven)
+library(janitor)
+library(knitr)
+library(kableExtra)
+
+## functions and lists to standardize names
+rename_countries <- function(country) {
+  case_when(
+    country %in% c("Antigua & Barbuda") ~ "Antigua and Barbuda",
+    country %in% c("Bahamas, The") ~ "Bahamas",
+    country %in% c("Bolivia (Plurinational State of)") ~ "Bolivia",
+    country %in% c("Bosnia & Herzegovina") ~ "Bosnia and Herzegovina",
+    country %in% c("British Virgin Is.") ~ "British Virgin Islands",
+    country %in% c("Brunei") ~ "Brunei Darussalam",
+    country %in% c("Buthan") ~ "Bhutan",
+    country %in% c("Cape Verde") ~ "Cabo Verde",
+    country %in% c("Central African Rep.") ~ "Central African Republic",
+    country %in% c("Congo, Dem, Rep,", "Congo, Dem. Rep.", "Congo, Democratic Republic", "Dem. Rep. of the Congo") ~ "Democratic Republic of the Congo",
+    country %in% c("Congo", "Congo (Rep. of the)", "Congo, Rep,", "Congo, Rep.", "Congo, Repub. of the") ~ "Republic of the Congo",
+    country %in% c("Cote d'Ivoire") ~ "Côte d'Ivoire",
+    country %in% c("Curacao") ~ "Curaçao",
+    country %in% c("Czechia") ~ "Czech Republic",
+    country %in% c("Dominican Rep.") ~ "Dominican Republic",
+    country %in% c("East Timor") ~ "Timor-Leste",
+    country %in% c("Egypt, Arab Rep.", "Egypt, Arab Rep,") ~ "Egypt",
+    country %in% c("Swaziland") ~ "Eswatini",
+    country %in% c("Falkland (Malvinas) Is.", "Falkland Islands (Malvinas)") ~ "Falkland Islands",
+    country %in% c("Gambia, The") ~ "Gambia",
+    country %in% c("Hong Kong, China", "China, Hong Kong Special Administrative Region", "Hong Kong SAR, China") ~ "Hong Kong",
+    country %in% c("Iran, Slamic Rep.", "Iran (Islamic Republic of)", "Iran, Islamic Rep,") ~ "Iran",
+    country %in% c("Jersey, Channel Islands") ~ "Jersey",
+    country %in% c("Kyrgyz Republic") ~ "Kyrgyzstan",
+    country %in% c("Lao P.D.R.", "Lao PDR", "Lao People's Democratic Republic", "Laos, PDR") ~ "Laos",
+    country %in% c("Luxemburg") ~ "Luxembourg",
+    country %in% c("China, Macao Special Administrative Region", "Macao SAR, China", "Macao, China", "Macau") ~ "Macao",
+    country %in% c("Macedonia, FYR") ~ "Macedonia",
+    country %in% c("Republic of Moldova") ~ "Moldova",
+    country %in% c("Micronesia (Federated States of)", "Micronesia, Fed. Sts.", "Micronesia, Fed. St.") ~ "Micronesia",
+    country %in% c("Burma") ~ "Myanmar",
+    country %in% c("Nepal (Republic of)") ~ "Nepal",
+    country %in% c("Netherlands Antilles (former)", "Netherlands Antilles") ~ "Netherlands",
+    country %in% c("Dem. People's Rep. of Korea", "Democratic People's Republic of Korea", "Korea, Dem. People's Rep.", "Korea, Dem. Rep.", "Korea, North") ~ "North Korea",
+    country %in% c("Macedonia") ~ "North Macedonia",
+    country %in% c("N. Mariana Islands") ~ "Northern Mariana Islands",
+    country %in% c("Reunion") ~ "Réunion",
+    country %in% c("St. Helena") ~ "Saint Helena",
+    country %in% c("St. Kitts and Nevis", "Saint Kitts & Nevis") ~ "Saint Kitts and Nevis",
+    country %in% c("St. Lucia") ~ "Saint Lucia",
+    country %in% c("St. Martin (French part)") ~ "Saint Martin",
+    country %in% c("St Pierre & Miquelon") ~ "Saint Pierre and Miquelon",
+    country %in% c("St. Vincent and the Grenadines") ~ "Saint Vincent and the Grenadines",
+    country %in% c("Sao Tome", "Sao Tome and Principe", "Sco Tomi and Principe", "Sao Tome & Principe") ~ "São Tomé and Principe",
+    country %in% c("SerbiaMontenegro") ~ "Serbia",
+    country %in% c("Slovak Republic") ~ "Slovakia",
+    country %in% c("Korea, Rep.", "Korea (Rep. of)", "Korea, Rep,", "Korea, Rep.", "Korea, South", "Republic of Korea") ~ "South Korea",
+    country %in% c("Russian Federation") ~ "Russia",
+    country %in% c("Syrian Arab Republic") ~ "Syria",
+    country %in% c("Taiwan, China", "Taiwan, Province of China") ~ "Taiwan",
+    country %in% c("United Republic of Tanzania") ~ "Tanzania",
+    country %in% c("Trinidad & Tobago") ~ "Trinidad and Tobago",
+    country %in% c("TC<rkiye", "Turkey", "Turkiye") ~ "Türkiye",
+    country %in% c("Turks & Caicos Is") ~ "Turks and Caicos Islands",
+    country %in% c("United Kingdom of Great Britain and Northern Ireland") ~ "United Kingdom",
+    country %in% c("United States of America") ~ "United States",
+    country %in% c("Venezuela (Bolivarian Republic of)", "Venezuela, RB") ~ "Venezuela",
+    country %in% c("Viet Nam") ~ "Vietnam",
+    country %in% c("Virgin Islands (US)", "Virgin Islands") ~ "Virgin Islands (U.S.)",
+    country %in% c("Wallis and Futuna Islands") ~ "Wallis and Futuna",
+    country %in% c("Yemen, Rep.") ~ "Yemen",
+    country %in% c("Gaza Strip", "Tokelau", "West Bank", "Western Sahara") ~ NA_character_,
+    TRUE ~ country
+  )
+}
+
+missing_regions <- c(
+  "Vatican" = "WESTERN EUROPE",
+  "Niue" = "OCEANIA",
+  "Ascension" = "SUB-SAHARAN AFRICA",
+  "Curaçao" = "LATIN AMER. & CARIB",
+  "Falkland Islands" = "LATIN AMER. & CARIB",
+  "State of Palestine" = "NEAR EAST",
+  "Montenegro" = "EASTERN EUROPE",
+  "Kosovo" = "EASTERN EUROPE",
+  "South Sudan" = "SUB-SAHARAN AFRICA",
+  "Channel Islands" = "WESTERN EUROPE",
+  "Iran, Islamic Rep." = "NEAR EAST",
+  "Saint Martin" = "LATIN AMER. & CARIB",
+  "Macedonia" = "EASTERN EUROPE",
+  "Bonaire, Sint Eustatius and Saba" = "LATIN AMER. & CARIB",
+  "United States Virgin Islands" = "LATIN AMER. & CARIB"
+)
+
+## read relevant datasets -----
+
+###
+fixed_metrics <- read_csv("countries of the world.csv") %>%
+  mutate(country = rename_countries(Country),
+         region = Region,
+         area = `Area (sq. mi.)`,
+         coastline = as.numeric(gsub(",", ".", `Coastline (coast/area ratio)`)),
+         .keep = "none") %>%
+  filter(!is.na(country))
+
+###
+internet_penetration <- read_csv('individuals-using-the-internet_1741283929073.csv') %>%
+  mutate(int_pen = dataValue,
+         country = rename_countries(entityName),
+         year = as.numeric(dataYear)) %>%
+  select(country, year, int_pen) %>%
+  filter(!is.na(country))
+
+###
+mobile_connectivity_index <- read_csv('MCI_Data_2024.csv') %>%
+  rename(mci_index = Index,
+         mci_infrastructure = Infrastructure,
+         mci_affordability = Affordability,
+         mci_cons_readiness = `Consumer Readiness`,
+         mci_content_services = `Content and Services`
+         ) %>%
+  mutate(country = rename_countries(Country),
+         year = as.numeric(Year)) %>%
+  select(country, year, mci_index, mci_infrastructure, mci_affordability, mci_cons_readiness, mci_content_services) %>%
+  filter(!is.na(country))
+
+
+###
+trade_to_GDP <- read_csv('API_NE.TRD.GNFS.ZS_DS2_en_csv_v2_75991.csv') %>%
+  rename(country = `Country Name`) %>%
+  mutate(country = rename_countries(country)) %>%
+  pivot_longer(
+    cols = `1960`:`2023`,
+    names_to = "year",
+    values_to = "trad_GDP"
+  ) %>%
+  select(country, year, trad_GDP) %>%
+  mutate(year = as.numeric(year)) %>%
+  filter(!is.na(country))
+
+###
+file_path <- "International_LPI_from_2007_to_2023_0.xlsx"
+sheet_names <- excel_sheets("International_LPI_from_2007_to_2023_0.xlsx")
+logistics_performance_index <- map_dfr(sheet_names, ~ read_excel(file_path, sheet = .x) %>%
+                                         clean_names() %>%
+                                         mutate(year = .x)
+) %>%
+  relocate(year, .after = country) %>%
+  mutate(country = rename_countries(country),
+         year = as.numeric(year)) %>%
+  select(country, year, lpi_score) %>%
+  filter(!is.na(country))
+
+###
+modern_renewables <- read_excel('Share of modern renewables database.xlsx') %>%
+  rename(country = `Country/Region`) %>%
+  mutate(country = rename_countries(country)) %>%
+  pivot_longer(
+    cols = `1990`:`2021`,
+    names_to = "year",
+    values_to = "ren_energy"
+  ) %>%
+  mutate (
+    ren_energy = na_if(ren_energy, ".."),
+    ren_energy = as.numeric(ren_energy),
+    year = as.numeric(year)
+  ) %>%
+  filter(!is.na(country))
+
+###
+political_stability_index <- read_dta('wgidataset.dta') %>%
+  select(countryname, year, indicator, estimate) %>%   # only keep relevant columns
+  mutate(year = as.numeric(year)) %>%
+  filter(!is.na(estimate)) %>%
+  pivot_wider(
+    names_from = indicator,
+    values_from = estimate
+  ) %>%
+  mutate(
+    country = rename_countries(countryname)
+  ) %>%
+  rename_with(~ paste0("psi_", .), -c(country, year)) %>%
+  select(country, year, starts_with("psi_")) %>%
+  filter(!is.na(country))
+
+# Merging -----
+
+merged_df <- internet_penetration %>%
+  full_join(mobile_connectivity_index)  %>%
+  full_join(trade_to_GDP) %>%
+  full_join(logistics_performance_index) %>%
+  full_join(modern_renewables) %>%
+  full_join(political_stability_index) %>%
+  full_join(fixed_metrics,
+            by = "country",
+            relationship = "many-to-many") %>%
+  mutate(region = if_else(is.na(region), recode(country, !!!missing_regions), region),
+         region = case_when(
+           region == "LATIN AMER. & CARIB" ~ "Latin America and Caribbean",
+           region == "NEAR EAST" ~ "Near East",
+           region == "SUB-SAHARAN AFRICA" ~ "Sub-Saharan Africa",
+           region == "WESTERN EUROPE" ~ "Western Europe",
+           region == "EASTERN EUROPE" ~ "Eastern Europe",
+           TRUE ~ str_to_title(region))) %>%
+  select(country, region, year, everything()) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 4))) %>%
+  filter(
+    !country %in% c(
+      "Arab World", "Africa (M49)", "Africa Eastern and Southern",
+      "Africa Western and Central", "Americas (m49)", "Asia (M49)",
+      "Australia and New Zealand (M49)", "Caribbean (M49)",
+      "Caribbean small states", "Caucasus and Central Asia (MDG)",
+      "Central America (M49)", "Central Asia (M49)",
+      "Central Asia (M49) and Southern Asia (MDG=M49)",
+      "Central Europe and the Baltics", "Developed regions (MDG)",
+      "Developing regions (MDG)", "Early-demographic dividend",
+      "East Asia & Pacific", "East Asia & Pacific (excluding high income)",
+      "East Asia & Pacific (IDA & IBRD countries)", "Eastern Africa (M49)",
+      "Eastern Asia (M49)", "Eastern Asia (M49) and South-eastern Asia (MDG=M49)",
+      "Eastern Asia (MDG)", "Eastern Europe (M49)", "Euro area",
+      "Europe (M49)", "Europe & Central Asia",
+      "Europe & Central Asia (excluding high income)",
+      "Europe & Central Asia (IDA & IBRD countries)", "European Union",
+      "Fragile and conflict affected situations", "Heavily indebted poor countries (HIPC)",
+      "High income", "IBRD only", "IDA & IBRD total", "IDA blend",
+      "IDA only", "IDA total", "Landlocked developing countries (LLDCs)",
+      "Late-demographic dividend", "Latin America & Caribbean",
+      "Latin America & Caribbean (excluding high income)",
+      "Latin America & the Caribbean (IDA & IBRD countries)",
+      "Latin America and the Caribbean (MDG=M49)",
+      "Least Developed Countries (LDCs)", "Least developed countries: UN classification",
+      "Low & middle income", "Low income", "Lower middle income",
+      "Melanesia (M49)", "Micronesia (M49)", "Middle Africa (M49)",
+      "Middle East & North Africa", "Middle East & North Africa (excluding high income)",
+      "Middle East & North Africa (IDA & IBRD countries)", "Middle income",
+      "North America", "Northern Africa (M49)", "Northern Africa (MDG)",
+      "Northern America (M49)", "Northern America (M49) and Europe (M49)",
+      "Northern Europe (M49)", "Not available", "Not classified",
+      "Oceania (M49)", "Oceania (M49) excluding Australia and New Zealand (M49)",
+      "Oceania (MDG)", "OECD members", "Other small states",
+      "Pacific island small states", "Polynesia (M49)", "Post-demographic dividend",
+      "Pre-demographic dividend", "Sint Maarten (Dutch part)",
+      "Small island developing States (SIDS)", "Small states",
+      "South America (M49)", "South Asia", "South Asia (IDA & IBRD)",
+      "South-eastern Asia (MDG=M49)", "Southern Africa (M49)",
+      "Southern Asia (MDG=M49)", "Southern Europe (M49)", "Sub-Saharan Africa",
+      "Sub-Saharan Africa (excluding high income)", "Sub-Saharan Africa (IDA & IBRD countries)",
+      "Sub-Saharan Africa (M49)", "Sub-Saharan Africa (MDG)", "Upper middle income",
+      "West Bank and Gaza", "Western Africa (M49)", "Western Asia (M49)",
+      "Western Asia (M49) and Northern Africa (M49)", "Western Asia (MDG)",
+      "Western Europe (M49)", "World"
+    ),
+    !grepl("Western Asia.*Northern Africa", country)
+  ) %>%
+  arrange(country, year)
+
+# summary stats function -----
+summary_stats <- function(var_name, ...) {
+  merged_df %>%
+    filter(!is.na(.data[[var_name]])) %>%
+    summarize(
+      Count = sum(!is.na(.data[[var_name]])),
+      Min = min(.data[[var_name]], na.rm = TRUE),
+      Mean = mean(.data[[var_name]], na.rm = TRUE),
+      Median = median(.data[[var_name]], na.rm = TRUE),
+      Max = max(.data[[var_name]], na.rm = TRUE),
+      Coverage = paste(min(.data$year, na.rm = TRUE), "-",
+                              max(.data$year, na.rm = TRUE), sep = "-")
+    ) %>%
+    kable(digits = 2, caption = "")
+}
+```
+
+# Overview of Data
+
+This dataset consolidates multiple indicators across a variety of domains related to global development and infrastructure. The data spans multiple years (1960 to 2024) and includes a wide range of variables that capture technological, economic, environmental, and governance-related aspects of countries around the world. The dataset is organized by country and year, allowing for longitudinal analysis and cross-country comparisons.
+
+## Key Features:
+- *Geographic Scope*: The dataset covers over 200 countries and territories, with geographic regions classified according to the World Bank’s regional definitions.
+
+- *Timeframe*: Data spans from 1960 to 2024, offering a long-term view of trends in internet penetration, mobile connectivity, trade, logistics performance, renewable energy adoption, and governance. Variable-based limitations arise due to the availability of published data.
+
+- *Variables*: The dataset includes several variables, each representing a distinct facet of development, such as the share of the population using the internet, the mobile connectivity index, trade openness (as a percentage of GDP), the Logistics Performance Index (LPI), the share of modern renewable energy, and governance indicators.
+
+The data is structured in a tidy format, with each row representing a unique observation for a given country and year, and each column representing a specific variable. Harmonization efforts were undertaken to standardize country names and regions across datasets. Missing values were handled thoughtfully, and NA values are explicitly coded as NA to maintain data integrity.
+
+By merging these diverse datasets, this project aims to provide a comprehensive picture of how global indicators related to technology, trade, logistics, energy, and governance evolve over time and across regions.
+
+# Sources and Methodology
+
+The data for this project was collected from a variety of reputable sources, including the International Telecommunication Union, the GSMA, the World Bank, and the International Energy Agency. Each dataset was merged into a unified panel with consistent identifiers (`country`, `year`) and cleaned for uniformity.
+
+### International Telecommunication Union
+- **Source**: International Telecommunication Union. (2025). *ITU DataHub*. https://datahub.itu.int/indicators/
+- **Variable**: *Individuals using the Internet (% of population)*
+- **Notes**: Data was reshaped to long format, retaining only country-level annual estimates.
+
+### GSMA Mobile Connectivity Index
+- **Source**: GSMA. (2023). *Mobile Connectivity Index*. https://www.mobileconnectivityindex.com/assets/excelData/MCI_Data_2024.xlsx
+- **Variables**: *mci_index*, *mci_infrastructure*, *mci_affordability*, *mci_cons_readiness*, *mci_content_services*
+- **Notes**: Numeric indicators of mobile readiness across infrastructure, affordability, and content access.
+
+### World Bank
+- **Source**: World Bank. (2024). *World Development Indicators – Trade*. https://api.worldbank.org/
+- **Variable**: *Trade as % of GDP (trad_GDP)*
+- **Notes**: Long format reshaping applied; harmonized country names.
+\linebreak
+- **Source**: World Bank. (2023). *Worldwide Governance Indicators*. https://www.worldbank.org/en/publication/worldwide-governance-indicators
+- **Variables**: *Political stability indicators (prefixed with `psi_`)*
+- **Notes**: Wide-format reshaped and renamed with `psi_` prefix for clarity.
+
+### World Bank LPI
+- **Source**: World Bank. (2023). *Logistics Performance Index (2007–2023)*. https://lpi.worldbank.org/
+- **Variable**: *lpi_score*
+- **Notes**: Combined sheets into a single panel; harmonized names and numeric years.
+
+### International Energy Agency
+- **Source**: International Energy Agency. (2024). *Share of Modern Renewables in Final Energy Consumption*. https://www.iea.org/data-and-statistics
+- **Variable**: *ren_energy* (Share of modern renewables)
+- **Notes**: Cleaned and converted non-numeric entries ("..") to NA.
+
+### Kaggle
+- **Source**: Lasso, F. (2018). *Countries of the World*. Kaggle. https://www.kaggle.com/datasets/fernandol/countries-of-the-world
+- **Variables**: *region*, *area*, *coastline*
+- **Notes**: Region harmonization and gap-filling were completed with a custom mapping.
+
+All country names were harmonized using a custom recoding function to ensure uniform joins across sources. NA values were explicitly handled and coded using `NA` throughout.
+
+# Itemized Variable Descriptions
+
+This section provides a reference guide to each variable in the dataset.
+
+---
+
+## `country` *(character)*  
+Name of the country or territory. Harmonized to standardized names.
+
+## `region` *(character)*  
+Broad geographic region.
+
+```{r region}
+merged_df %>%
+  distinct(region) %>%
+  filter(!str_detect(region, "\\d")) %>%
+  pull(region) %>%
+  as.data.frame() %>%
+  setNames(NULL) %>%
+  kable(col.names = NULL, caption = "")
+```
+
+## `year` *(character)*  
+Year of the observation or data record ranging from 1960-2024.
+
+## `int_pen` *(numeric)*  
+Internet penetration rate – the percentage of individuals using the internet in a given country. This indicator is measured as a share of the total population, based on surveys and administrative data collected by the International Telecommunication Union.
+
+```{r}
+summary_stats("int_pen")
+```
+
+## `mci_index` *(numeric)*  
+Mobile Connectivity Index (MCI) – overall score, ranging from 0 to 100. This composite score measures the capacity of a country to support mobile internet adoption and usage, based on enablers like infrastructure, affordability, consumer readiness, and availability of content/services. A higher score indicates a stronger mobile internet ecosystem.
+
+```{r}
+summary_stats("mci_index")
+```
+
+## `mci_infrastructure` *(numeric)*  
+Infrastructure sub-index of the MCI, ranging from 0 to 100. This reflects the availability and quality of mobile network infrastructure (e.g., 3G/4G coverage, spectrum availability, international bandwidth).
+
+```{r}
+summary_stats("mci_infrastructure")
+```
+
+## `mci_affordability` *(numeric)*  
+Affordability sub-index of the MCI, ranging from 0 to 100. This captures the cost of mobile services relative to income, including handset and mobile data affordability.
+
+```{r}
+summary_stats("mci_affordability")
+```
+
+## `mci_cons_readiness` *(numeric)*  
+Consumer readiness sub-index of the MCI, ranging from 0 to 100. This reflects users' ability and willingness to use mobile internet, based on literacy levels, digital skills, gender equality, and device ownership.
+
+```{r}
+summary_stats("mci_cons_readiness")
+```
+
+## `mci_content_services` *(numeric)*  
+Content and services sub-index of the MCI, ranging from 0 to 100. This measures the availability of relevant, local, and accessible content and services in local languages, including e-government, mobile apps, and social platforms.
+
+```{r}
+summary_stats("mci_content_services")
+```
+
+## `trad_GDP` *(numeric)*  
+Trade (% of GDP) – calculated as the sum of exports and imports of goods and services measured as a share of gross domestic product. Higher values indicate greater economic openness or dependence on international trade.
+
+```{r}
+summary_stats("trad_GDP")
+```
+
+## `lpi_score` *(numeric)*  
+Logistics Performance Index (LPI) – a score ranging from 1 to 5 that measures the quality of logistics services in a country, including customs procedures, infrastructure, shipment tracking, and timeliness. Higher scores reflect more efficient trade logistics environments.
+
+```{r}
+summary_stats("lpi_score")
+```
+
+## `ren_energy` *(numeric)*  
+Modern renewable energy share – the percentage of total final energy consumption derived from modern renewable sources (e.g., solar, wind, biofuels, excluding traditional biomass). Based on data from the International Energy Agency.
+
+```{r}
+summary_stats("ren_energy")
+```
+
+## `psi_cc` *(numeric)*  
+Governance indicator: Control of Corruption, ranging from approximately -2.5 (weak) to +2.5 (strong). Higher values reflect better control of corruption, defined as the extent to which public power is exercised for private gain.
+
+```{r}
+summary_stats("psi_cc")
+```
+
+## `psi_ge` *(numeric)*  
+Governance indicator: Government Effectiveness, ranging from -2.5 to 2.5. This captures the quality of public services, civil service, and the credibility of government policy implementation.
+
+```{r}
+summary_stats("psi_ge")
+```
+
+## `psi_pv` *(numeric)*  
+Governance indicator: Political Stability and Absence of Violence, ranging from -2.5 to 2.5. Higher values represent more politically stable environments with lower likelihood of violence, terrorism, or government instability.
+
+```{r}
+summary_stats("psi_pv")
+```
+
+## `psi_rl` *(numeric)*  
+Governance indicator: Rule of Law, ranging from -2.5 to 2.5. Reflects the extent to which agents have confidence in and abide by the rules of society, including property rights, judicial independence, and contract enforcement.
+
+```{r}
+summary_stats("psi_rl")
+```
+
+## `psi_rq` *(numeric)*  
+Governance indicator: Regulatory Quality, ranging from -2.5 to 2.5. Measures the ability of the government to formulate and implement sound policies and regulations that promote private sector development.
+
+```{r}
+summary_stats("psi_rq")
+```
+
+## `psi_va` *(numeric)*  
+Governance indicator: Voice and Accountability, ranging from -2.5 to 2.5. Reflects citizens’ ability to participate in selecting their government, as well as freedom of expression, freedom of association, and a free media.
+
+```{r}
+summary_stats("psi_va")
+```
+
+## `area` *(numeric)*  
+Total land area of the country or territory, measured in square kilometers. Represents the entire surface area including inland water bodies.
+
+```{r}
+summary_stats("area")
+```
+
+## `coastline` *(numeric)*  
+Coastline-to-area ratio, calculated as coastline length divided by total land area (in miles per square mile). This metric is used to indicate geographic exposure to maritime environments, often linked to trade potential.
+
+```{r}
+summary_stats("coastline")
+```
