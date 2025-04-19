@@ -218,6 +218,8 @@ merged_df <- internet_penetration %>%
            region == "SUB-SAHARAN AFRICA" ~ "Sub-Saharan Africa",
            region == "WESTERN EUROPE" ~ "Western Europe",
            region == "EASTERN EUROPE" ~ "Eastern Europe",
+           region == "C.W. OF IND. STATES" ~ "Commonwealth of Independent States",
+           region == "ASIA (EX. NEAR EAST)" ~ "Asia (except Near East)",
            TRUE ~ str_to_title(region))) %>%
   select(country, region, year, everything()) %>%
   mutate(across(where(is.numeric), ~ round(.x, 4))) %>%
@@ -296,7 +298,7 @@ write.csv(merged_df, "codebook.csv")
 This dataset consolidates multiple indicators across a variety of domains related to global development and infrastructure. The data spans multiple years (1960 to 2024) and includes a wide range of variables that capture technological, economic, environmental, and governance-related aspects of countries around the world. The dataset is organized by country and year, allowing for longitudinal analysis and cross-country comparisons.
 
 ## Key Features:
-- *Geographic Scope*: The dataset covers over 200 countries and territories, with geographic regions classified according to the World Bank’s regional definitions.
+- *Geographic Scope*: The dataset covers over 200 countries and territories, with geographic regions classified according to Kaggle's "Countries of the World" regional definitions.
 
 - *Timeframe*: Data spans from 1960 to 2024, offering a long-term view of trends in internet penetration, mobile connectivity, trade, logistics performance, renewable energy adoption, and governance. Variable-based limitations arise due to the availability of published data.
 
