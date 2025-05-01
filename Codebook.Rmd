@@ -1,5 +1,5 @@
 ---
-title: "Codebook"
+title: "Trade Readiness"
 author: "Santiago Taborga"
 date: '2025-04-20'
 output: pdf_document
@@ -295,7 +295,7 @@ write.csv(merged_df, "codebook.csv")
 
 # Overview of Data
 
-This dataset consolidates multiple indicators across a variety of domains related to global development and infrastructure. The data spans multiple years (1960 to 2024) and includes a wide range of variables that capture technological, economic, environmental, and governance-related aspects of countries around the world. The dataset is organized by country and year, allowing for longitudinal analysis and cross-country comparisons.
+The Trade Readiness dataset consolidates multiple indicators across a variety of domains related to global development and infrastructure. The data spans multiple years (1960 to 2024) and includes a wide range of variables that capture technological, economic, environmental, and governance-related aspects of countries around the world. The dataset is organized by country and year, allowing for longitudinal analysis and cross-country comparisons.
 
 ## Key Features:
 - *Geographic Scope*: The dataset covers over 200 countries and territories, with geographic regions classified according to Kaggle's "Countries of the World" regional definitions.
@@ -308,10 +308,11 @@ The data is structured in a tidy format, with each row representing a unique obs
 
 By merging these diverse datasets, this project aims to provide a comprehensive picture of how global indicators related to technology, trade, logistics, energy, and governance evolve over time and across regions.
 
+\pagebreak
 # Sources and Methodology
 
 The data for this project was collected from a variety of reputable sources, including the International Telecommunication Union, the GSMA, the World Bank, and the International Energy Agency. Each dataset was merged into a unified panel with consistent identifiers (`country`, `year`) and cleaned for uniformity.
-\pagebreak
+
 ```{r}
 # Table for vars
 df_sources <- data.frame(
@@ -356,9 +357,25 @@ df_sources %>%
   column_spec(2, width = "4cm") %>%
   column_spec(3, width = "7cm")
 ```
-
 All country names were harmonized using a custom recoding function to ensure uniform joins across sources. NA values were explicitly handled and coded using `NA` throughout.
 
+### References
+
+- GSMA. (2023). Mobile Connectivity Index. https://www.mobileconnectivityindex.com/assets/excelData/MCI_Data_2024.xlsx
+
+- International Energy Agency. (2024). Share of Modern Renewables in Final Energy Consumption. https://www.iea.org/data-and-statistics
+
+- International Telecommunication Union. (2025). ITU DataHub. https://datahub.itu.int/indicators/
+
+- Lasso, F. (2018). Countries of the World [Dataset]. Kaggle. https://www.kaggle.com/datasets/fernandol/countries-of-the-world
+
+- World Bank. (2023). Logistics Performance Index (2007–2023). https://lpi.worldbank.org/
+
+- World Bank. (2023). Worldwide Governance Indicators. https://www.worldbank.org/en/publication/worldwide-governance-indicators
+
+- World Bank. (2024). World Development Indicators – Trade. https://api.worldbank.org/
+
+\pagebreak
 # Itemized Variable Descriptions
 
 This section provides a reference guide to each variable in the dataset.
@@ -371,12 +388,9 @@ Broad geographic region.
 
 ```{r region}
 merged_df %>%
-  distinct(region) %>%
-  filter(!str_detect(region, "\\d")) %>%
-  pull(region) %>%
-  as.data.frame() %>%
-  setNames(NULL) %>%
-  kable(col.names = NULL, caption = "")
+  group_by(region) %>%
+  summarize(num_countries = n_distinct(country), .groups = "drop") %>%
+  kable(col.names = c("Region", "# of Countries + Territories"), caption = "")
 ```
 
 ## `year` *(character)*  
@@ -500,19 +514,3 @@ Coastline-to-area ratio, calculated as coastline length divided by total land ar
 ```{r}
 summary_stats("coastline")
 ```
-
-\pagebreak
-# Data Sources
-- GSMA. (2023). Mobile Connectivity Index. https://www.mobileconnectivityindex.com/assets/excelData/MCI_Data_2024.xlsx
-
-- International Energy Agency. (2024). Share of Modern Renewables in Final Energy Consumption. https://www.iea.org/data-and-statistics
-
-- International Telecommunication Union. (2025). ITU DataHub. https://datahub.itu.int/indicators/
-
-- Lasso, F. (2018). Countries of the World [Dataset]. Kaggle. https://www.kaggle.com/datasets/fernandol/countries-of-the-world
-
-- World Bank. (2023). Logistics Performance Index (2007–2023). https://lpi.worldbank.org/
-
-- World Bank. (2023). Worldwide Governance Indicators. https://www.worldbank.org/en/publication/worldwide-governance-indicators
-
-- World Bank. (2024). World Development Indicators – Trade. https://api.worldbank.org/
